@@ -1,0 +1,84 @@
+
+  //unsigned long nevents; weird...so the plugin must know about previous notes that are pressed?  yes for each call run_synth it should know about note which are currently pressed. oh but there isn't any place to indicate that? seems like we just need
+  //to keep track of how many notes are currently running and pass it an unsigned long that has that count, but aside from that,
+  //it just takes note_on and note_off structs, which refer to only one note at a time? not really,
+  //so in C to pass an array we have to use two variables onw is a pointer to data, another is number of elements in that array. so run_synth is one of such functions, and if you have two notes pressed you send array of size 2, storing two elements nearby in memory and setting nevents to 2. got it, so current_event isn't a pointer to a struct, it's a pointer to an array of event structs, most likely? yes
+//
+//so what do we do next? we need to construct this array of currently pressed notes, so need to check events and try to construc this.
+
+
+
+
+//ok moving on...I did a bit of research about midi types...basically the reason mrswatson only supports type0 midi is that 
+//the idea behind type0 midi is that it is single-channel. Here channel is a bit of a confusing word, because there is also such a thing as an audio channel, obviously
+//but the two are completely unrelated. Channel is like a track in multitrack recording, type0 midi only has one of these tracks, but potentially has program 
+//changes within it (program change is just a change of voice). so what we're working on here only handles single channel midi as well, and that's good.
+//Only thing to think about is, if we abstract our loop to process the note events in the channel, rather than the note events in the entire file (unfortunately confusing
+//terminology again, because in midifiles, the entire file is called a "track"). But this is basically the situation.
+//
+//Midi events come in a few different types, but basically there are three types that are important
+//
+//meta type events
+//
+//channel events (events particular to a single channel)
+//
+//track events (events that apply to every channel)
+//
+//so meta type events are sort of special events, 
+//
+//channel events and track events are more like "regular" events....
+//
+//do you follow so far? yep
+//
+//
+//
+//So the main question to ask you is, since we are iterating through all events, how do we handle multiple channels? we have the option to do what mrswatson has done
+//which is to read the midi file type from the header and end in error if it is anything but type0, or we can sort of process the channels individually in the sense that we send appropriate info to the plugin, telling it which channel it is intended for. Most plugins though don't care about multiple channels
+//
+//another option, more related to the first is to write a simple script (or find one) that separates out multi-channel midi into individual type0 files.
+//
+//so with multi channel files, if events are sorted by time in file, then we can just send them all at once as it was one channel, so plugin will produce resulting file.
+//if that's the plan, I guess we should check to make sure that dssi doesn't support multiple channels, because if it does, maybe we should tell the plugin which channel each event is intended for? i think snd_seq_event_t has that filed for channel, so we just need to copy that info there.
+//
+//
+//
+//ok do we break now? seems a bit late yeah, so basically what is left to do is to write it from pseudo code to real code of this function, add pritngin to see how it works and if there is any bugs to fix them.
+//ok then make this into a module, add it to cli-dssi-host and change cli-dssi-host source to deal with this loop? yep. got it. maybe we can look into this tomorrow morning? sure ok perfect
+
+
+
+  //ok so what were you thinking here?
+  //ok and finally that run_synth need array which is not sparse, where elements are without spaces, so either you rebuild
+  //new array every time you call run_synth, or keep elements together and use find function to locate a note. find function
+  //sounds best, either way, do we need two arrays? no need
+
+  //with this, can I assign sparsely to it, if I want to put the notes[100] = 4; , will that cause an error?
+  //so first is that you need to put size of memory you use in malloc,  not   e lemtns, like that, right? yep
+  //second is that we need snd_seq_event_t intead of ints. I was just thinking that if the note is pressed, it wouldn
+  //have a value , if not it wouldn't so it would be an easy way to keep track of which are pressed or not? hmm sort of short lookup arraly, might work if built properly. ok well I don't know if that's right I'll make another array
+//question is, if we're sending a list, and a NOTE_ON and NOTE_OFF must be removed from the list once it has been already processed, how do we access those elements? by note name somehow? yeah need to track each note on\off pair.
+//no clue how to do this in C, easy in any other language, just use an associative array
+//right in C it turns into function which finds an element in array. how big should our array be? do we use the heap here? ideally we need to use it, but  guess we can limit number of notes which are pressed at same time, like 100 or so should be plently there are only so many midi notes, I'll get the count 128 that should be the limit good,  try write with heap functions, might be useful to see how to work with it. well could I just
+
+
+
+
+  //so what does this return exactly? so then event arrives we need to try find note if it was pressed or not.
+  //so basically whole logic of get_events function is:
+  //
+  //snd_seq_event_t event = convert_event(fluid_midi_event_t);
+  //event_in_table = find_event(&event);
+  //switch(event->type ){
+  //  case NOTE_ON:
+  //    if(event_in_table) return; // skip if pressed while still was pressed, shouldn't happen...I think it just gets pressed again, but both are deleted on the note_off, does that make sense? hmm might be, but that change a logic a bit
+  //    yeah something like this. so basic idea is clear or not really? yeah it's clear, just too advanced for me 
+  //    to come up with on my own right now given my current skills with C, it's coming along fast though well it's simple then written in perl or somethng else, just showing how c does the same things. so now need to implement those functions ok
+  //    insert_event(event);
+  //    run_synth();
+  //
+  //  case NOTE_OFF:
+  //    replace_events(event_in_table,event)
+  //    run_synth()
+  //    delete_events(event);
+  //
+  //}

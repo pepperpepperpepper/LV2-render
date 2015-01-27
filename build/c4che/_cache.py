@@ -8,7 +8,7 @@ CC_NAME = 'gcc'
 CC_SRC_F = []
 CC_TGT_F = ['-c', '-o']
 CC_VERSION = ('4', '9', '2')
-CFLAGS = ['-I/home/pepper/LV2_render', '-DNDEBUG', '-fshow-column', '-std=c99']
+CFLAGS = ['-I/home/pepper/LV2-render', '-DNDEBUG', '-fshow-column', '-std=c99']
 CFLAGS_MACBUNDLE = ['-fPIC']
 CFLAGS_cshlib = ['-fPIC']
 CHECKED_JACK = 2
@@ -22,7 +22,7 @@ COMPILER_CC = 'gcc'
 COMPILER_CXX = 'g++'
 CPPPATH_ST = '-I%s'
 CXX = ['/usr/bin/g++']
-CXXFLAGS = ['-I/home/pepper/LV2_render', '-DNDEBUG', '-fshow-column']
+CXXFLAGS = ['-I/home/pepper/LV2-render', '-DNDEBUG', '-fshow-column']
 CXXFLAGS_MACBUNDLE = ['-fPIC']
 CXXFLAGS_cxxshlib = ['-fPIC']
 CXXLNK_SRC_F = []
@@ -90,7 +90,7 @@ VERSION_serd-0 = '0.14.0'
 VERSION_sord-0 = '0.12.0'
 VERSION_sratom-0 = '0.4.0'
 VERSION_suil-0 = '0.6.0'
-cfg_files = ['/home/pepper/LV2_render/build/jalv_config.h']
+cfg_files = ['/home/pepper/LV2-render/build/jalv_config.h']
 cprogram_PATTERN = '%s'
 cshlib_PATTERN = 'lib%s.so'
 cstlib_PATTERN = 'lib%s.a'

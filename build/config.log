@@ -1,13 +1,13 @@
-# project LV2-render (1.4.6) configured on Sun Jan 25 23:28:57 2015 by
+# project LV2-render (1.4.6) configured on Tue Jan 27 01:36:36 2015 by
 # waf 1.7.16 (abi 98, python 20708f0 on linux2)
 # using ./waf configure
 #
 ----------------------------------------
 Setting top to
-/home/pepper/LV2_render
+/home/pepper/LV2-render
 ----------------------------------------
 Setting out to
-/home/pepper/LV2_render/build
+/home/pepper/LV2-render/build
 ----------------------------------------------------
 Checking for 'gcc' (c compiler)
 find program=['gcc', 'cc'] paths=['/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/sbin', '/usr/sbin', '/sbin', '/usr/firstscripts', '/root/.gem/ruby/2.1.0/bin', '/opt/android-sdk/build-tools/19.0.2/', '/opt/android-sdk/platform-tools', '/opt/android-sdk/tools', '/opt/devkitpro/devkitPPC/bin', '/opt/marytts/bin', '/usr/bin/site_perl', '/usr/bin/vendor_perl', '/usr/bin/core_perl', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/'] var='CC' -> '/usr/bin/gcc'
@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
 <==
 [1/2] [32mcxx: build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/test.cpp -> build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild/test.cpp.1.o
 [0m
-['/usr/bin/g++', '-I/home/pepper/LV2_render', '-DNDEBUG', '-fshow-column', '-I/home/pepper/LV2_render/build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild', '-DHAVE_LV2=1', '-DHAVE_LILV=1', '-DHAVE_SERD=1', '-DHAVE_SORD=1', '-DHAVE_SUIL=1', '-DHAVE_SRATOM=1', '-DHAVE_JACK=1', '../test.cpp', '-c', '-o', 'test.cpp.1.o']
+['/usr/bin/g++', '-I/home/pepper/LV2-render', '-DNDEBUG', '-fshow-column', '-I/home/pepper/LV2-render/build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild', '-DHAVE_LV2=1', '-DHAVE_LILV=1', '-DHAVE_SERD=1', '-DHAVE_SORD=1', '-DHAVE_SUIL=1', '-DHAVE_SRATOM=1', '-DHAVE_JACK=1', '../test.cpp', '-c', '-o', 'test.cpp.1.o']
 [2/2] [33mcxxprogram: build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild/test.cpp.1.o -> build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild/testprog
 [0m
-['/usr/bin/g++', 'test.cpp.1.o', '-o', '/home/pepper/LV2_render/build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild/testprog', '-Wl,-Bstatic', '-Wl,-Bdynamic', '-lm', '-lsndfile', '-ljack']
+['/usr/bin/g++', 'test.cpp.1.o', '-o', '/home/pepper/LV2-render/build/.conf_check_af37a22df4c19cf0432d3404a6b219d1/testbuild/testprog', '-Wl,-Bstatic', '-Wl,-Bdynamic', '-lm', '-lsndfile', '-ljack']
 yes
 ----------------------------------------------------
 Checking for function jack_set_property
@@ -106,8 +106,8 @@ int main(int argc, char **argv) {
 <==
 [1/2] [32mcxx: build/.conf_check_623450d91353b10e839bd52fd98cd354/test.cpp -> build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild/test.cpp.1.o
 [0m
-['/usr/bin/g++', '-I/home/pepper/LV2_render', '-DNDEBUG', '-fshow-column', '-I/home/pepper/LV2_render/build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild', '-DHAVE_LV2=1', '-DHAVE_LILV=1', '-DHAVE_SERD=1', '-DHAVE_SORD=1', '-DHAVE_SUIL=1', '-DHAVE_SRATOM=1', '-DHAVE_JACK=1', '-DHAVE_JACK_PORT_TYPE_GET_BUFFER_SIZE=1', '../test.cpp', '-c', '-o', 'test.cpp.1.o']
+['/usr/bin/g++', '-I/home/pepper/LV2-render', '-DNDEBUG', '-fshow-column', '-I/home/pepper/LV2-render/build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild', '-DHAVE_LV2=1', '-DHAVE_LILV=1', '-DHAVE_SERD=1', '-DHAVE_SORD=1', '-DHAVE_SUIL=1', '-DHAVE_SRATOM=1', '-DHAVE_JACK=1', '-DHAVE_JACK_PORT_TYPE_GET_BUFFER_SIZE=1', '../test.cpp', '-c', '-o', 'test.cpp.1.o']
 [2/2] [33mcxxprogram: build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild/test.cpp.1.o -> build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild/testprog
 [0m
-['/usr/bin/g++', 'test.cpp.1.o', '-o', '/home/pepper/LV2_render/build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild/testprog', '-Wl,-Bstatic', '-Wl,-Bdynamic', '-lm', '-lsndfile', '-ljack']
+['/usr/bin/g++', 'test.cpp.1.o', '-o', '/home/pepper/LV2-render/build/.conf_check_623450d91353b10e839bd52fd98cd354/testbuild/testprog', '-Wl,-Bstatic', '-Wl,-Bdynamic', '-lm', '-lsndfile', '-ljack']
 yes

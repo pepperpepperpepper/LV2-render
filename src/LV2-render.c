@@ -71,14 +71,14 @@
    really ought to be enough for anybody(TM).
 */
 #define N_BUFFER_CYCLES 16
+#define SAMPLE_RATE 48000 
+
 
 #include <alsa/asoundlib.h>
 #include <sndfile.h>
 #include "midi/midi_loader.h"
 #include "midi/fluidsynth_priv.h"
-#define SAMPLE_RATE 48000 // here
 
-//so min is here, how come it doesn't see it? not sure, try remove inline
 int min(int x, int y) {
   return (x < y) ? x : y;
 }
@@ -171,18 +171,30 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 	}
 
 
-
 	lilv_instance_run(jalv->instance, nframes); 
+//TODO
+//    /* Interleaving for libsndfile. */ 
+    int nchannels = 2; 
+    float sf_output[nchannels * nframes]; //nframes is n times longer now
+    for (int i = 0; i < nframes; i++) {
+      /* First, write all the obvious channels */
+      /* If outs > nchannels, we *could* do mixing - but don't. */
+      //actually you need another for loop in here for 10 channel wavs
+      sf_output[i * nchannels + 0] = pluginOutputBuffers[3][i];
+      sf_output[i * nchannels + 1] = pluginOutputBuffers[4][i];
+      /* Then, if user wants *more* output channels than there are
+       * audio output ports (ie outs < nchannels), copy the last audio
+       * out to all the remaining channels. If outs >= nchannels, this
+       * loop is never entered. */
+    }
 
-  write_audio_to_file(ctx->outfile, pluginOutputBuffers[3], nframes);  //TODO ADD LATER
-//    printf("total ports: %d\n", jalv->num_ports);
+    write_audio_to_file(ctx->outfile, sf_output, nframes); 
     for(int i=0; i<jalv->num_ports; i++){
       if(pluginOutputBuffers[i]){
-        //printf("buffer: %x content:", i);
-        //print_audio_to_terminal(pluginOutputBuffers[i], nframes);
         free(pluginOutputBuffers[i]);
       }
     }
+//something like this<F
 
 
 
@@ -684,8 +696,8 @@ main(int argc, char** argv)
 
 	lilv_node_free(name);
 
-	jalv.sample_rate  = SAMPLE_RATE; 
-	jalv.block_length = 1024; //TODO used to be 256 
+	jalv.sample_rate = SAMPLE_RATE; 
+	jalv.block_length = 256; //TODO used to be 256 try 1024 4096
   jalv.midi_buf_size = 32768; //used to be 256
 
 	printf("Block length: %u frames\n", jalv.block_length);
@@ -764,9 +776,9 @@ main(int argc, char** argv)
 
   // open_wav_file here
   char *output_file = "output.wav";
-  size_t length = SAMPLE_RATE;
+  size_t length = SAMPLE_RATE; //gets changed when file is closed
   float sample_rate = SAMPLE_RATE; 
-  int nchannels = 1;
+  int nchannels = 2;
   SNDFILE *outfile = open_wav_file(output_file, sample_rate, nchannels, length);
   process_midi_ctx_t process_midi_ctx;
   process_midi_ctx.jalv = &jalv;
@@ -779,13 +791,6 @@ main(int argc, char** argv)
 
 
   sf_close(outfile);
-
-	/* Run UI (or prompt at console) */
-//	jalv_open_ui(&jalv);
-
-
-//	zix_sem_wait(&exit_sem);
-//	jalv.exit = true;
 
 	fprintf(stderr, "Exiting...\n");
 

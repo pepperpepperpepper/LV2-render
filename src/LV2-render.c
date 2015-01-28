@@ -71,13 +71,13 @@
    really ought to be enough for anybody(TM).
 */
 #define N_BUFFER_CYCLES 16
-#define SAMPLE_RATE 48000 
 
 
 #include <alsa/asoundlib.h>
 #include <sndfile.h>
 #include "midi/midi_loader.h"
 #include "midi/fluidsynth_priv.h"
+
 
 int min(int x, int y) {
   return (x < y) ? x : y;
@@ -175,7 +175,7 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 	lilv_instance_run(jalv->instance, nframes); 
 //TODO
 //    /* Interleaving for libsndfile. */ 
-    int nchannels = 2; 
+    int nchannels = ctx->jalv->opts.nchannels;
     if (nchannels > pluginAudioOutputCount){
       fprintf(stderr, "ERROR: Requesting more audio outputs than available from plugin.\n");
       exit(1);
@@ -527,15 +527,26 @@ main(int argc, char** argv)
 	jalv.play_state    = JALV_PAUSED; 
 	jalv.bpm           = 120.0f;
 
+
 	if (jalv_init(&argc, &argv, &jalv.opts)) {
 		return EXIT_FAILURE;
 	} 
 
-	if (jalv.opts.uuid) {
-		printf("UUID: %s\n", jalv.opts.uuid);
-	}
+  if (! jalv.opts.nchannels){
+    jalv.opts.nchannels = 2;
+  }
+  
+  if (! strlen(&jalv.opts.outfile)){
+    //FIXME
+    printf("here it is: %d\n", strlen(&jalv.opts.outfile));
+    exit(1);
+  }
 
-	jalv.symap = symap_new(); 
+  if (! jalv.opts.sample_rate){
+    jalv.opts.sample_rate = 48000;
+  } 
+	
+  jalv.symap = symap_new(); 
 	zix_sem_init(&jalv.symap_lock, 1); 
 	uri_map.callback_data = &jalv;
 
@@ -700,7 +711,7 @@ main(int argc, char** argv)
 
 	lilv_node_free(name);
 
-	jalv.sample_rate = SAMPLE_RATE; 
+	jalv.sample_rate = jalv.opts.sample_rate; 
 	jalv.block_length = 256; //TODO used to be 256 try 1024 4096
   jalv.midi_buf_size = 32768; //used to be 256
 
@@ -775,15 +786,14 @@ main(int argc, char** argv)
 
 
 //FIXME get sample rate from above...right? yes
-	jalv.sample_rate = SAMPLE_RATE; 
+	jalv.sample_rate = jalv.opts.sample_rate; 
 	jalv.play_state  = JALV_RUNNING;
 
   // open_wav_file here
-  char *output_file = "output.wav";
-  size_t length = SAMPLE_RATE; //gets changed when file is closed
-  float sample_rate = SAMPLE_RATE; 
-  int nchannels = 2;
-  SNDFILE *outfile = open_wav_file(output_file, sample_rate, nchannels, length);
+  char *output_file = jalv.opts.outfile;
+  size_t length = (size_t)jalv.opts.sample_rate; //gets changed when file is closed
+  float sample_rate = (float)jalv.opts.sample_rate; 
+  SNDFILE *outfile = open_wav_file(output_file, sample_rate, jalv.opts.nchannels, length);
   process_midi_ctx_t process_midi_ctx;
   process_midi_ctx.jalv = &jalv;
   process_midi_ctx.outfile = outfile;

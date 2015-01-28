@@ -80,6 +80,9 @@ typedef struct {
 	int      no_menu;           ///< Hide menu iff true
 	int      show_ui;           ///< Show non-embedded UI
 	int      print_controls;    ///< Print control changes to stdout
+	int      nchannels;    ///
+	int      sample_rate;    ///
+	char*    outfile;    ///
 } JalvOptions;
 
 typedef struct {

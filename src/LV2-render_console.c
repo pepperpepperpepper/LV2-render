@@ -19,6 +19,9 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -h           Display this help and exit\n");
 	fprintf(os, "  -p           Print control output changes to stdout\n");
 	fprintf(os, "  -c SYM=VAL   Set control value (e.g. \"vol=1.4\")\n");
+	fprintf(os, "  -F STRING    filename for wavfile output (DEFAULT=output.wav)\n");
+	fprintf(os, "  -C NUM       Integer number of channels for output, e.g. 2 (DEFAULT=2)\n");
+	fprintf(os, "  -S NUM       Integer sample rate of output, e.g. 44100 (DEFAULT=48000)\n");
 	fprintf(os, "  -l DIR       Load state from save directory\n");
 	fprintf(os, "  -d DIR       Dump plugin <=> UI communication\n");
 	fprintf(os, "  -b SIZE      Buffer size for plugin <=> UI communication\n");
@@ -61,6 +64,24 @@ jalv_init(int* argc, char*** argv, JalvOptions* opts)
 			                         (++n_controls + 1) * sizeof(char*));
 			opts->controls[n_controls - 1] = (*argv)[a];
 			opts->controls[n_controls]     = NULL;
+		} else if ((*argv)[a][1] == 'C') {
+			if (++a == *argc) {
+				fprintf(stderr, "Missing argument for -C\n");
+				return 1;
+			}
+			opts->nchannels = atoi((*argv)[a]);
+		} else if ((*argv)[a][1] == 'S') {
+			if (++a == *argc) {
+				fprintf(stderr, "Missing argument for -S\n");
+				return 1;
+			}
+			opts->sample_rate = atoi((*argv)[a]);
+		} else if ((*argv)[a][1] == 'F') {
+			if (++a == *argc) {
+				fprintf(stderr, "Missing argument for -F\n");
+				return 1;
+			}
+			opts->outfile = (*argv)[a];
 		} else if ((*argv)[a][1] == 'd') {
 			opts->dump = true;
 		} else {

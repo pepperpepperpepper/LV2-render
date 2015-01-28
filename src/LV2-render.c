@@ -130,8 +130,9 @@ SNDFILE *open_wav_file(char *output_file, float sample_rate, int nchannels, size
 int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t *ctx) 
 {
   Jalv *jalv = ctx->jalv; 
-  float **pluginOutputBuffers = (float **)calloc(jalv->num_ports, sizeof(float *));
-  float *pluginOutputBuffer_first = NULL;
+  float **pluginAudioIOBuffers = (float **)calloc(jalv->num_ports, sizeof(float *));
+  float *pluginAudioPtrs[100];
+  size_t pluginAudioOutputCount = 0;
   size_t nframes;
 
   /* convert msecs */
@@ -141,14 +142,16 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 	for (uint32_t p = 0; p < jalv->num_ports; ++p) {
 		struct Port* port = &jalv->ports[p];
 		if (port->type == TYPE_AUDIO) { 
-      pluginOutputBuffers[p] = (float *)calloc(nframes, sizeof(float));
-      if(!pluginOutputBuffer_first){ pluginOutputBuffer_first = pluginOutputBuffers[p]; };
-
+      pluginAudioIOBuffers[p] = (float *)calloc(nframes, sizeof(float));
 			lilv_instance_connect_port( 
 				jalv->instance, p, //connect port p to this location
-        pluginOutputBuffers[p]
+        pluginAudioIOBuffers[p]
       );
-      printf("buffer %x ptr: %8x\n", p, pluginOutputBuffers[p]);
+      if (port->flow == FLOW_OUTPUT){
+        pluginAudioPtrs[pluginAudioOutputCount] = pluginAudioIOBuffers[p];
+        pluginAudioOutputCount++;
+        printf("buffer %x ptr: %8x\n", p, pluginAudioIOBuffers[p]);
+      } 
 		} else if (port->type == TYPE_EVENT && port->flow == FLOW_INPUT) {
 			lv2_evbuf_reset(port->evbuf, true);
 
@@ -165,8 +168,6 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 					                sizeof(midi_event_buffer), midi_event_buffer);
 		} else if (port->type == TYPE_EVENT) {
 			/* Clear event output for plugin to write to */
-//      printf("CLEARING EVENT\n");
-			lv2_evbuf_reset(port->evbuf, false);
 		}
 	}
 
@@ -175,13 +176,20 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 //TODO
 //    /* Interleaving for libsndfile. */ 
     int nchannels = 2; 
+    if (nchannels > pluginAudioOutputCount){
+      fprintf(stderr, "ERROR: Requesting more audio outputs than available from plugin.\n");
+      exit(1);
+    }
     float sf_output[nchannels * nframes]; //nframes is n times longer now
     for (int i = 0; i < nframes; i++) {
       /* First, write all the obvious channels */
       /* If outs > nchannels, we *could* do mixing - but don't. */
       //actually you need another for loop in here for 10 channel wavs
-      sf_output[i * nchannels + 0] = pluginOutputBuffers[3][i];
-      sf_output[i * nchannels + 1] = pluginOutputBuffers[4][i];
+//      sf_output[i * nchannels + 0] = pluginAudioIOBuffers[3][i];
+//      sf_output[i * nchannels + 1] = pluginAudioIOBuffers[4][i];
+      for (size_t n = 0; n < pluginAudioOutputCount; n++){
+        sf_output[i * nchannels + n] = pluginAudioPtrs[n][i];
+      }
       /* Then, if user wants *more* output channels than there are
        * audio output ports (ie outs < nchannels), copy the last audio
        * out to all the remaining channels. If outs >= nchannels, this
@@ -190,14 +198,10 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 
     write_audio_to_file(ctx->outfile, sf_output, nframes); 
     for(int i=0; i<jalv->num_ports; i++){
-      if(pluginOutputBuffers[i]){
-        free(pluginOutputBuffers[i]);
+      if(pluginAudioIOBuffers[i]){
+        free(pluginAudioIOBuffers[i]);
       }
     }
-//something like this<F
-
-
-
 
 	return 0;
 }

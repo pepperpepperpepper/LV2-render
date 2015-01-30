@@ -82,7 +82,7 @@ typedef struct {
 	int      print_controls;    ///< Print control changes to stdout
 	int      nchannels;    ///
 	int      sample_rate;    ///
-	char*    outfile;    ///
+	char*    outfile;    //
 } JalvOptions;
 
 typedef struct {

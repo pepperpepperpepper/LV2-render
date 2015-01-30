@@ -126,17 +126,74 @@ SNDFILE *open_wav_file(char *output_file, float sample_rate, int nchannels, size
   return outfile;
 }
 
+int first_event = 1;
 
 int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t *ctx) 
 {
   Jalv *jalv = ctx->jalv; 
   float **pluginAudioIOBuffers = (float **)calloc(jalv->num_ports, sizeof(float *));
+//ok this works fine, but has problems with other plugins
   float *pluginAudioPtrs[100];
   size_t pluginAudioOutputCount = 0;
   size_t nframes;
-
-  /* convert msecs */
+  
+/* convert msecs */
   nframes = msecs * ctx->sample_rate / 1000; 
+// ok let's try this
+// hmm still nothing, well only thing left is ui, but i have doubt about that. i guess need to start from original jalv, and keep moving new parts of code there til it breaks, looks like it still has something that amsynth needs
+//another option might be keeping jalv code as original as possible, only thing we change is jack callback, so it would still need running jack, but intead of jack process callback we will call own callback which send events manually and get output. (maybe calling jacK_process_cb once to get atom send once). 
+//
+//how does this work? well need to construct it same way as jalv did, then send it
+	/* Get Jack transport position */
+//ORIGINAL-> sending to evbuf: frame: 13136896, rolling: 1.000000, calc: -1, bar: 0, beat_type: 1146875112, bpb: 1184130760, bpm: 0: need valid if: -787014688
+	const bool rolling = 1;
+
+	uint8_t   pos_buf[256];
+	LV2_Atom* lv2_pos = (LV2_Atom*)pos_buf;
+	if (first_event) {
+		/* Build an LV2 position object to report change to plugin */
+		lv2_atom_forge_set_buffer(&jalv->forge, pos_buf, sizeof(pos_buf));
+		LV2_Atom_Forge*      forge = &jalv->forge;
+		LV2_Atom_Forge_Frame frame;
+		lv2_atom_forge_object(forge, &frame, 0, jalv->urids.time_Position);
+		lv2_atom_forge_key(forge, jalv->urids.time_frame);
+		lv2_atom_forge_long(forge, 13136896);
+		lv2_atom_forge_key(forge, jalv->urids.time_speed);
+		lv2_atom_forge_float(forge, rolling ? 1.0 : 0.0);
+/*if (pos.valid & JackPositionBBT) {
+			lv2_atom_forge_key(forge, jalv->urids.time_barBeat);
+			lv2_atom_forge_float(
+				forge, pos.beat - 1 + (pos.tick / pos.ticks_per_beat));
+			lv2_atom_forge_key(forge, jalv->urids.time_bar);
+			lv2_atom_forge_long(forge, pos.bar - 1);
+			lv2_atom_forge_key(forge, jalv->urids.time_beatUnit);
+			lv2_atom_forge_int(forge, pos.beat_type);
+			lv2_atom_forge_key(forge, jalv->urids.time_beatsPerBar);
+			lv2_atom_forge_float(forge, pos.beats_per_bar);
+			lv2_atom_forge_key(forge, jalv->urids.time_beatsPerMinute);
+			lv2_atom_forge_float(forge, pos.beats_per_minute);
+		}*/
+
+		if (jalv->opts.dump) {
+			char* str = sratom_to_turtle(
+				jalv->sratom, &jalv->unmap, "time:", NULL, NULL,
+				lv2_pos->type, lv2_pos->size, LV2_ATOM_BODY(lv2_pos));
+			printf("\n## Position\n%s\n", str);
+			free(str);
+		}
+	}
+
+	/* Update transport state to expected values for next cycle */
+	jalv->position = 13136896 + nframes; //rolling ? pos.frame + nframes : pos.frame;
+	jalv->bpm      = 120.0; //pos.beats_per_minute;
+	jalv->rolling  = rolling;
+
+//
+//should we run this now? not yet, not sure yet what to do with bpm and frame
+//where do we send it? here
+//and when was lst time it worked, before changes here, or after too? still works, just with a different plugin (the other one we were testing). no changes really
+// except that loop that tests for which audio ports are output ports, and taking streams from them. but the thing is, it seems like no audio is coming out of the plugin
+//
 
 	/* Prepare port buffers */
 	for (uint32_t p = 0; p < jalv->num_ports; ++p) {
@@ -150,13 +207,21 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
       if (port->flow == FLOW_OUTPUT){
         pluginAudioPtrs[pluginAudioOutputCount] = pluginAudioIOBuffers[p];
         pluginAudioOutputCount++;
+        
+        printf("pluginAudioOutputCount: %d\n", pluginAudioOutputCount);
         printf("buffer %x ptr: %8x\n", p, pluginAudioIOBuffers[p]);
       } 
 		} else if (port->type == TYPE_EVENT && port->flow == FLOW_INPUT) {
 			lv2_evbuf_reset(port->evbuf, true);
 
 			LV2_Evbuf_Iterator iter = lv2_evbuf_begin(port->evbuf);
-       
+      
+      if(first_event){
+        lv2_evbuf_write(
+            &iter, 0, 0,
+            lv2_pos->type, lv2_pos->size, LV2_ATOM_BODY(lv2_pos));
+        first_event = 0;
+      } 
       uint8_t midi_event_buffer[3];
           midi_event_buffer[0] = event->type;
           midi_event_buffer[1] = event->param1;
@@ -176,10 +241,13 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 //TODO
 //    /* Interleaving for libsndfile. */ 
     int nchannels = ctx->jalv->opts.nchannels;
-    if (nchannels > pluginAudioOutputCount){
-      fprintf(stderr, "ERROR: Requesting more audio outputs than available from plugin.\n");
+    if (nchannels != pluginAudioOutputCount){
+      fprintf(stderr, "ERROR: Incompatible number of channels and output ports.\n");
+      fprintf(stderr, "Audio Output Ports: %d\n", pluginAudioOutputCount);
+      fprintf(stderr, "Channels: %d\n", nchannels);
       exit(1);
     }
+    
     float sf_output[nchannels * nframes]; //nframes is n times longer now
     for (int i = 0; i < nframes; i++) {
       /* First, write all the obvious channels */
@@ -205,6 +273,7 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 
 	return 0;
 }
+
 
 
 ZixSem exit_sem;  /**< Exit semaphore */
@@ -335,6 +404,10 @@ create_port(Jalv*    jalv,
 	} else if (!optional) {
 		die("Mandatory port has unknown type (neither input nor output)");
 	}
+//ORIGINALjalv.sample_rate: 48000
+//we should add these? yeah
+//ORIGINALjalv.block_length: 1024
+//ORIGINALjalv midi_buf_size: 8000
 
 	/* Set control values */
 	if (lilv_port_is_a(jalv->plugin, port->lilv_port, jalv->nodes.lv2_ControlPort)) {
@@ -410,7 +483,7 @@ jalv_allocate_port_buffers(Jalv* jalv)
 			lv2_evbuf_free(port->evbuf);
 			const size_t buf_size = (port->buf_size > 0)
 				? port->buf_size
-				: jalv->midi_buf_size;
+				: jalv->midi_buf_size; 
 			port->evbuf = lv2_evbuf_new(
 				buf_size,
 				port->old_api ? LV2_EVBUF_EVENT : LV2_EVBUF_ATOM,
@@ -522,10 +595,13 @@ main(int argc, char** argv)
 	Jalv jalv;
 	memset(&jalv, '\0', sizeof(Jalv));
 	jalv.prog_name     = argv[0];
-	jalv.block_length  = 4096;  
-	jalv.midi_buf_size = 1024; 
+
+	jalv.block_length  = 1024;    //doesn't look like we  use this though, right? looks so FIXME try removing
+  jalv.midi_buf_size = 0x8000; //should I try running it? not yet
+	//jalv.midi_buf_size = 1024; 
 	jalv.play_state    = JALV_PAUSED; 
-	jalv.bpm           = 120.0f;
+  //FIXME pass bpm
+	jalv.bpm           = 120.0f; //oh probably we don't even use this bpm, right? coul dbe
 
 
 	if (jalv_init(&argc, &argv, &jalv.opts)) {
@@ -536,10 +612,9 @@ main(int argc, char** argv)
     jalv.opts.nchannels = 2;
   }
   
-  if (! strlen(&jalv.opts.outfile)){
-    //FIXME
-    printf("here it is: %d\n", strlen(&jalv.opts.outfile));
-    exit(1);
+  if(!jalv.opts.outfile){
+    jalv.opts.outfile = (char *)malloc(256);// 
+    strcpy(jalv.opts.outfile, "output.wav");
   }
 
   if (! jalv.opts.sample_rate){
@@ -686,6 +761,7 @@ main(int argc, char** argv)
 	LilvNodes* req_feats = lilv_plugin_get_required_features(jalv.plugin);
 	LILV_FOREACH(nodes, f, req_feats) {
 		const char* uri = lilv_node_as_uri(lilv_nodes_get(req_feats, f));
+    printf("REQUIRED FEATURE: %s\n", uri);
 		if (!feature_is_supported(uri)) {
 			fprintf(stderr, "Feature %s is not supported\n", uri);
 			lilv_world_free(world);
@@ -700,7 +776,9 @@ main(int argc, char** argv)
 		state = lilv_state_new_from_world(
 			jalv.world, &jalv.map, lilv_plugin_get_uri(jalv.plugin));
 	}
-
+//	const char* native_ui_type_uri = jalv_native_ui_type(&jalv);
+	jalv.uis = lilv_plugin_get_uis(jalv.plugin);
+//ok let's try it
 	/* Create port structures (jalv.ports) */
 	jalv_create_ports(&jalv);
 
@@ -712,8 +790,8 @@ main(int argc, char** argv)
 	lilv_node_free(name);
 
 	jalv.sample_rate = jalv.opts.sample_rate; 
-	jalv.block_length = 256; //TODO used to be 256 try 1024 4096
-  jalv.midi_buf_size = 32768; //used to be 256
+	//jalv.block_length = 256; //TODO used to be 256 try 1024 4096
+  //jalv.midi_buf_size = 32768; //used to be 256
 
 	printf("Block length: %u frames\n", jalv.block_length);
 	printf("MIDI buffers: %zu bytes\n", jalv.midi_buf_size);
@@ -756,6 +834,16 @@ main(int argc, char** argv)
 		jalv.plugin, jalv.sample_rate, features);
 	if (!jalv.instance) {
 		die("Failed to instantiate plugin.\n");
+	}
+
+	/* Create thread and ringbuffers for worker if necessary */
+	if (lilv_plugin_has_feature(jalv.plugin, jalv.nodes.work_schedule) // can we check if amsynth has this work_schedule feature? hmm yeah we should check via LV2-render, right? yeah
+	    && lilv_plugin_has_extension_data(jalv.plugin, jalv.nodes.work_interface)) {
+//		jalv_worker_init(
+	//		&jalv, &jalv.worker,
+		//	(const LV2_Worker_Interface*)lilv_instance_get_extension_data(
+			//	jalv.instance, LV2_WORKER__interface));
+		  printf("NEED WORKER!\n"); //extension data test too? yeah I guess not ok let's see what else
 	}
 
 	ext_data.data_access = lilv_instance_get_descriptor(jalv.instance)->extension_data;

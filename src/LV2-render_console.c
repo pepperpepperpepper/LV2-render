@@ -81,7 +81,7 @@ jalv_init(int* argc, char*** argv, JalvOptions* opts)
 				fprintf(stderr, "Missing argument for -F\n");
 				return 1;
 			}
-			opts->outfile = (*argv)[a];
+			opts->outfile = (*argv)[a]; //is this wrong? not really
 		} else if ((*argv)[a][1] == 'd') {
 			opts->dump = true;
 		} else {

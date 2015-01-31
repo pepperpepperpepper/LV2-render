@@ -22,9 +22,9 @@ jalv_worker_respond(LV2_Worker_Respond_Handle handle,
                     const void*               data)
 {
 	Jalv* jalv = (Jalv*)handle;
-	jack_ringbuffer_write(jalv->worker.responses,
-	                      (const char*)&size, sizeof(size));
-	jack_ringbuffer_write(jalv->worker.responses, (const char*)data, size);
+//	jack_ringbuffer_write(jalv->worker.responses,
+//	                      (const char*)&size, sizeof(size));
+//	jack_ringbuffer_write(jalv->worker.responses, (const char*)data, size);
 	return LV2_WORKER_SUCCESS;
 }
 
@@ -40,7 +40,7 @@ worker_func(void* data)
 		}
 
 		uint32_t size = 0;
-		jack_ringbuffer_read(jalv->worker.requests, (char*)&size, sizeof(size));
+//		jack_ringbuffer_read(jalv->worker.requests, (char*)&size, sizeof(size));
 
 		if (!(buf = realloc(buf, size))) {
 			fprintf(stderr, "error: realloc() failed\n");
@@ -48,7 +48,7 @@ worker_func(void* data)
 			return NULL;
 		}
 
-		jack_ringbuffer_read(jalv->worker.requests, (char*)buf, size);
+//		jack_ringbuffer_read(jalv->worker.requests, (char*)buf, size);
 
 		jalv->worker.iface->work(
 			jalv->instance->lv2_handle, jalv_worker_respond, jalv, size, buf);
@@ -65,11 +65,11 @@ jalv_worker_init(Jalv*                       jalv,
 {
 	worker->iface = iface;
 	zix_thread_create(&worker->thread, 4096, worker_func, jalv);
-	worker->requests  = jack_ringbuffer_create(4096);
-	worker->responses = jack_ringbuffer_create(4096);
+//	worker->requests  = jack_ringbuffer_create(4096);
+//	worker->responses = jack_ringbuffer_create(4096);
 	worker->response  = malloc(4096);
-	jack_ringbuffer_mlock(worker->requests);
-	jack_ringbuffer_mlock(worker->responses);
+//	jack_ringbuffer_mlock(worker->requests);
+//	jack_ringbuffer_mlock(worker->responses);
 }
 
 void
@@ -78,8 +78,8 @@ jalv_worker_finish(JalvWorker* worker)
 	if (worker->requests) {
 		zix_sem_post(&worker->sem);
 		zix_thread_join(worker->thread, NULL);
-		jack_ringbuffer_free(worker->requests);
-		jack_ringbuffer_free(worker->responses);
+//		jack_ringbuffer_free(worker->requests);
+//		jack_ringbuffer_free(worker->responses);
 		free(worker->response);
 	}
 }
@@ -90,9 +90,9 @@ jalv_worker_schedule(LV2_Worker_Schedule_Handle handle,
                      const void*                data)
 {
 	Jalv* jalv = (Jalv*)handle;
-	jack_ringbuffer_write(jalv->worker.requests,
-	                      (const char*)&size, sizeof(size));
-	jack_ringbuffer_write(jalv->worker.requests, (const char*)data, size);
+//	jack_ringbuffer_write(jalv->worker.requests,
+//	                      (const char*)&size, sizeof(size));
+//	jack_ringbuffer_write(jalv->worker.requests, (const char*)data, size);
 	zix_sem_post(&jalv->worker.sem);
 	return LV2_WORKER_SUCCESS;
 }
@@ -101,13 +101,13 @@ void
 jalv_worker_emit_responses(Jalv* jalv, JalvWorker* worker)
 {
 	if (worker->responses) {
-		uint32_t read_space = jack_ringbuffer_read_space(worker->responses);
+		uint32_t read_space;// = jack_ringbuffer_read_space(worker->responses);
 		while (read_space) {
 			uint32_t size = 0;
-			jack_ringbuffer_read(worker->responses, (char*)&size, sizeof(size));
-
-			jack_ringbuffer_read(
-				worker->responses, (char*)worker->response, size);
+//			jack_ringbuffer_read(worker->responses, (char*)&size, sizeof(size));
+//
+//			jack_ringbuffer_read(
+//				worker->responses, (char*)worker->response, size);
 
 			worker->iface->work_response(
 				jalv->instance->lv2_handle, size, worker->response);

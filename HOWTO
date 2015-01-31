@@ -1,0 +1,4 @@
+CONTROL VALUES CAN BE SET WITH CLI ARGS eg.
+-c PHA1_DAFT=1.00
+
+also with -l from a file...

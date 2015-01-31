@@ -79,6 +79,9 @@
 #include "midi/fluidsynth_priv.h"
 
 #define DEBUG 0
+#define FILE_OK 0x0
+#define WRITE_OK 0x2
+
 
 int min(int x, int y) {
   return (x < y) ? x : y;
@@ -591,6 +594,19 @@ main(int argc, char** argv)
     jalv.opts.infile = (char *)malloc(256);// 
     strcpy(jalv.opts.infile, "test.mid");
   }
+
+
+  //make sure input and output exist
+  if(access(jalv.opts.infile, FILE_OK)){
+    fprintf(stderr, "ERROR:Could not find %s\n Please specify an input file with -i\n", jalv.opts.infile);
+    exit(1);
+  }
+  if(!access(jalv.opts.outfile, WRITE_OK)){
+    fprintf(stderr, "ERROR:Could not write to %s\n.", jalv.opts.outfile);
+    exit(1);
+  }
+
+
 
   if (! jalv.opts.sample_rate){
     jalv.opts.sample_rate = 48000;

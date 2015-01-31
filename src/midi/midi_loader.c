@@ -1,8 +1,11 @@
 #include "midi_loader.h"  
+#define DEBUG 0
 
 //static int event_count = 0;
 size_t last_msec = 0; 
 size_t nmsecs_since_last = 0;
+
+
 
 void print_event(fluid_midi_event_t *event, size_t current_msec){
 //  {{{ DESCRIPTION
@@ -14,14 +17,15 @@ void print_event(fluid_midi_event_t *event, size_t current_msec){
 //  unsigned char type;       /* MIDI event type */
 //  unsigned char channel;    /* MIDI channel */
 //}}}
-//  printf("EVENT_COUNT: %d\n", event_count);
-  printf("dtime:%u ", event->dtime);
-  printf("param1:%u ", event->param1);
-  printf("param2: %u ", event->param2);
-  printf("type: %x ", event->type);
-  printf("channel: %u ", event->channel);
-  printf("nframe: %u ", current_msec);
-  puts("\n");
+  if(DEBUG){
+    printf("dtime:%u ", event->dtime);
+    printf("param1:%u ", event->param1);
+    printf("param2: %u ", event->param2);
+    printf("type: %x ", event->type);
+    printf("channel: %u ", event->channel);
+    printf("nframe: %u ", current_msec);
+    puts("\n");
+  }
 }
 
 int get_events(void *data, fluid_midi_event_t *event){
@@ -32,16 +36,12 @@ int get_events(void *data, fluid_midi_event_t *event){
   read_midi_callback cb = ctx->callback; 
   size_t current_msec;
 
-//  event_count++;
   current_msec = (player->deltatime * track->ticks);
   nmsecs_since_last = current_msec - last_msec; 
   last_msec = current_msec; 
  
-//  print_event(event, current_msec);
   //process_midi_cb execution...
-  cb(event, nmsecs_since_last, ctx->callback_userdata); // seems good, check the output ok
-//ok I'm going to study this, make a git back it up clean it up etc tomorrow, but I think I understand. this is
-//definitely coming along. thanks so much for the help no problems alright awesome, I'll talk to you and send you a payment again soon thanks again
+  cb(event, nmsecs_since_last, ctx->callback_userdata); 
 }
 
 void load_midi_file(char *filename, read_midi_callback callback, void *callback_userdata){ 

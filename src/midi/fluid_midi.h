@@ -22,8 +22,6 @@
 #define _FLUID_MIDI_H
 
 #include "fluidsynth_priv.h"
-//#include "fluid_sys.h"
-//#include "custom.h"
 #include "fluid_list.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -322,13 +320,10 @@ fluid_track_t* fluid_player_get_track(fluid_player_t* player, int i);
 int fluid_player_reset(fluid_player_t* player);
 int fluid_player_load(fluid_player_t* player, fluid_playlist_item *item);
 
-//void fluid_player_settings(fluid_settings_t* settings);
-
 
 /*
  * fluid_midi_file
  */
-//hmm no events though here, right? looks so
 typedef struct {
   const char* buffer;           /* Entire contents of MIDI file (borrowed) */
   int buf_len;                  /* Length of buffer, in bytes */

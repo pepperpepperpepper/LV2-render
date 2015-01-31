@@ -1,10 +1,7 @@
 
 #include "fluid_midi.h"
 #include <math.h>
-//#include "fluid_sys.h"
-//#include "fluid_synth.h"
-//#include "fluid_settings.h"
-
+#define DEBUG 0
 int
 fluid_log(int level, const char* fmt, ...) 
 {
@@ -62,7 +59,6 @@ new_fluid_midi_file(const char* buffer, size_t length)
     }
     return mf;
 }
-//ok how do you usually create a file_pointer in this case? with fopen FILE READ do you think we can just try this function directly with fopen? yes, fluid_file i think is just FILE * returned by fopen, so code will be fopen, fluid_file_read_full and then new_fluid_midi_file.
 
 static char*
 fluid_file_read_full(fluid_file fp, size_t* length)
@@ -213,7 +209,6 @@ int fluid_midi_file_eof(fluid_midi_file* mf)
 /*
  * fluid_midi_file_read_mthd
  */
-//it's actually does all the work inside new_fluid_midi_file function to read file and get all events allocated and set, so now we just need to print those.
 int
 fluid_midi_file_read_mthd(fluid_midi_file *mf)
 {
@@ -238,7 +233,7 @@ fluid_midi_file_read_mthd(fluid_midi_file *mf)
         return FLUID_FAILED;
     } else {
         mf->uses_smpte = 0;
-        mf->division = (mthd[12] << 8) | (mthd[13] & 0xff); //division is in the header for the midi file, he gets the value here. do we have access to it in custom.c? looks like player have also current time in milliseconds too, in addition to ticks, we can try to just use those. ok good. so the player is doing the parsing, we're just 
+        mf->division = (mthd[12] << 8) | (mthd[13] & 0xff); 
 
         FLUID_LOG(FLUID_DBG, "Division=%d", mf->division);
     }
@@ -421,7 +416,6 @@ fluid_midi_file_read_varlen(fluid_midi_file *mf)
 /*
  * fluid_midi_file_read_event
  */
-//could be this, right...it only takes the file and the track as args
 int
 fluid_midi_file_read_event(fluid_midi_file *mf, fluid_track_t *track)
 {
@@ -760,7 +754,7 @@ fluid_midi_file_get_division(fluid_midi_file *midifile)
  */
 
 /**
- * MIDI EVENT DEFINED HERE...do we need to figure out exactly how this ties in to cli-dssi-host next? not yet, for now we need working midi loading from file and listing events according to each time sample. should we write a print event function? yeah in main() custom.c
+ * MIDI EVENT DEFINED HERE
  * Create a MIDI event structure.
  * @return New MIDI event structure or NULL when out of memory.
  */
@@ -1183,7 +1177,7 @@ fluid_track_reset(fluid_track_t *track)
  */
 int
 fluid_track_send_events(fluid_track_t *track,
-			fluid_synth_t *synth, //will the null pointer cause an error here? nope, will work //doesn't use it? here... I guess not
+			fluid_synth_t *synth, 
 			fluid_player_t *player,
 			unsigned int ticks)
 {
@@ -1196,10 +1190,6 @@ fluid_track_send_events(fluid_track_t *track,
         if (event == NULL) {
             return status;
         }
-
-//ok it should be printing here, right? well need to check flow again, starting from load_tracks if it reach this function or not
-//do we decide now to just listen for note on and note off, and keep track of the two? yep
-//run_synth also takes velocity, so maybe we should add that as well? i guess so
 
         if (track->ticks + event->dtime > ticks) {
             return status;
@@ -1233,7 +1223,6 @@ fluid_track_send_events(fluid_track_t *track,
  * @param synth fluid synthesizer instance to create player for
  * @return New MIDI player instance or NULL on error (out of memory)
  */
-//ok how do we call new_fluid_player with the filename of the midifile?  wmayeb call fluid_player_load() with file name
 fluid_player_t *
 new_fluid_player(void)
 {
@@ -1261,7 +1250,6 @@ new_fluid_player(void)
     player->deltatime = 4.0;
     player->cur_msec = 0;
     player->cur_ticks = 0;
-  // FIXME  fluid_player_set_playback_callback(player, fluid_synth_handle_midi_event, synth);
 
    // player->use_system_timer = fluid_settings_str_equal(synth->settings,
      //       "player.timing-source", "system");
@@ -1335,9 +1323,6 @@ fluid_player_reset(fluid_player_t *player)
             player->track[i] = NULL;
         }
     }
-    /*	player->current_file = NULL; */
-    /*	player->status = FLUID_PLAYER_READY; */
-    /*	player->loop = 1; */
     player->ntracks = 0;
     player->division = 0;
     player->send_program_change = 1;
@@ -1465,8 +1450,9 @@ fluid_player_add_mem(fluid_player_t* player, const void *buffer, size_t len)
 int
 fluid_player_load(fluid_player_t *player, fluid_playlist_item *item)
 {
-    puts("inside fluid player load");
-    //ok do you think this is the function we need to check? well i found it, this long printf i uncommented wasn't used, we need to use fluid_track_send_events inside loop over loaded tracks to actually send events into our callback. ok
+    if (DEBUG){ 
+      puts("inside fluid player load");
+    }
     fluid_midi_file *midifile;
     char* buffer;
     size_t buffer_length;
@@ -1502,7 +1488,6 @@ fluid_player_load(fluid_player_t *player, fluid_playlist_item *item)
         /* Do not free the buffer (it is owned by the playlist) */
         buffer_owned = 0;
     }
-// here file
     midifile = new_fluid_midi_file(buffer, buffer_length);
     if (midifile == NULL) {
         if (buffer_owned) {
@@ -1514,7 +1499,6 @@ fluid_player_load(fluid_player_t *player, fluid_playlist_item *item)
     //DIVISION SET HERE
     fluid_player_set_midi_tempo(player, player->miditempo); // Update deltatime
     /*FLUID_LOG(FLUID_DBG, "quarter note division=%d\n", player->division); */
-// here it load tracks
     if (fluid_midi_file_load_tracks(midifile, player) != FLUID_OK) {
         if (buffer_owned) {
             FLUID_FREE(buffer);
@@ -1574,10 +1558,6 @@ fluid_player_playlist_load(fluid_player_t *player, unsigned int msec)
     player->start_ticks = 0;
     player->cur_ticks = 0;
 
-//    if (player->reset_synth_between_songs) {
-//        fluid_synth_system_reset(player->synth);
-//    }
-
     for (i = 0; i < player->ntracks; i++) {
         if (player->track[i] != NULL) {
             fluid_track_reset(player->track[i]);
@@ -1589,8 +1569,6 @@ fluid_player_playlist_load(fluid_player_t *player, unsigned int msec)
 /*
  * fluid_player_callback
  */
-//ok so I guess it all starts here? not sure, new_fluid_player starts a new player struct, then we need fluid_player_load(player, playlist_item)
-//and playlist_item have filename of file to load got it
 int
 fluid_player_callback(void *data, unsigned int msec)
 {
@@ -1733,8 +1711,6 @@ int fluid_player_set_loop(fluid_player_t *player, int loop)
 int fluid_player_set_midi_tempo(fluid_player_t *player, int tempo)
 {
     player->miditempo = tempo;
-    //DIVISION CALCULATION MADE HERE
-    //USE THIS TO FIX MRS WATSON
     player->deltatime = (double) tempo / player->division / 1000.0; /* in milliseconds */
     player->start_msec = player->cur_msec;
     player->start_ticks = player->cur_ticks;

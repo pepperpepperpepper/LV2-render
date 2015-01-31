@@ -78,6 +78,7 @@
 #include "midi/midi_loader.h"
 #include "midi/fluidsynth_priv.h"
 
+#define DEBUG 0
 
 int min(int x, int y) {
   return (x < y) ? x : y;
@@ -139,12 +140,7 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
   
 /* convert msecs */
   nframes = msecs * ctx->sample_rate / 1000; 
-// ok let's try this
-// hmm still nothing, well only thing left is ui, but i have doubt about that. i guess need to start from original jalv, and keep moving new parts of code there til it breaks, looks like it still has something that amsynth needs
-//another option might be keeping jalv code as original as possible, only thing we change is jack callback, so it would still need running jack, but intead of jack process callback we will call own callback which send events manually and get output. (maybe calling jacK_process_cb once to get atom send once). 
-//
-//how does this work? well need to construct it same way as jalv did, then send it
-	/* Get Jack transport position */
+//TODO maybe just get rid of this stuff
 //ORIGINAL-> sending to evbuf: frame: 13136896, rolling: 1.000000, calc: -1, bar: 0, beat_type: 1146875112, bpb: 1184130760, bpm: 0: need valid if: -787014688
 	const bool rolling = 1;
 
@@ -160,19 +156,6 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 		lv2_atom_forge_long(forge, 13136896);
 		lv2_atom_forge_key(forge, jalv->urids.time_speed);
 		lv2_atom_forge_float(forge, rolling ? 1.0 : 0.0);
-/*if (pos.valid & JackPositionBBT) {
-			lv2_atom_forge_key(forge, jalv->urids.time_barBeat);
-			lv2_atom_forge_float(
-				forge, pos.beat - 1 + (pos.tick / pos.ticks_per_beat));
-			lv2_atom_forge_key(forge, jalv->urids.time_bar);
-			lv2_atom_forge_long(forge, pos.bar - 1);
-			lv2_atom_forge_key(forge, jalv->urids.time_beatUnit);
-			lv2_atom_forge_int(forge, pos.beat_type);
-			lv2_atom_forge_key(forge, jalv->urids.time_beatsPerBar);
-			lv2_atom_forge_float(forge, pos.beats_per_bar);
-			lv2_atom_forge_key(forge, jalv->urids.time_beatsPerMinute);
-			lv2_atom_forge_float(forge, pos.beats_per_minute);
-		}*/
 
 		if (jalv->opts.dump) {
 			char* str = sratom_to_turtle(
@@ -188,12 +171,6 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
 	jalv->bpm      = 120.0; //pos.beats_per_minute;
 	jalv->rolling  = rolling;
 
-//
-//should we run this now? not yet, not sure yet what to do with bpm and frame
-//where do we send it? here
-//and when was lst time it worked, before changes here, or after too? still works, just with a different plugin (the other one we were testing). no changes really
-// except that loop that tests for which audio ports are output ports, and taking streams from them. but the thing is, it seems like no audio is coming out of the plugin
-//
 
 	/* Prepare port buffers */
 	for (uint32_t p = 0; p < jalv->num_ports; ++p) {
@@ -208,8 +185,10 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
         pluginAudioPtrs[pluginAudioOutputCount] = pluginAudioIOBuffers[p];
         pluginAudioOutputCount++;
         
-        printf("pluginAudioOutputCount: %d\n", pluginAudioOutputCount);
-        printf("buffer %x ptr: %8x\n", p, pluginAudioIOBuffers[p]);
+        if(DEBUG){
+          printf("pluginAudioOutputCount: %d\n", pluginAudioOutputCount);
+          printf("buffer %x ptr: %8x\n", p, pluginAudioIOBuffers[p]);
+        }
       } 
 		} else if (port->type == TYPE_EVENT && port->flow == FLOW_INPUT) {
 			lv2_evbuf_reset(port->evbuf, true);
@@ -253,8 +232,6 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
       /* First, write all the obvious channels */
       /* If outs > nchannels, we *could* do mixing - but don't. */
       //actually you need another for loop in here for 10 channel wavs
-//      sf_output[i * nchannels + 0] = pluginAudioIOBuffers[3][i];
-//      sf_output[i * nchannels + 1] = pluginAudioIOBuffers[4][i];
       for (size_t n = 0; n < pluginAudioOutputCount; n++){
         sf_output[i * nchannels + n] = pluginAudioPtrs[n][i];
       }
@@ -404,10 +381,6 @@ create_port(Jalv*    jalv,
 	} else if (!optional) {
 		die("Mandatory port has unknown type (neither input nor output)");
 	}
-//ORIGINALjalv.sample_rate: 48000
-//we should add these? yeah
-//ORIGINALjalv.block_length: 1024
-//ORIGINALjalv midi_buf_size: 8000
 
 	/* Set control values */
 	if (lilv_port_is_a(jalv->plugin, port->lilv_port, jalv->nodes.lv2_ControlPort)) {
@@ -596,12 +569,10 @@ main(int argc, char** argv)
 	memset(&jalv, '\0', sizeof(Jalv));
 	jalv.prog_name     = argv[0];
 
-	jalv.block_length  = 1024;    //doesn't look like we  use this though, right? looks so FIXME try removing
-  jalv.midi_buf_size = 0x8000; //should I try running it? not yet
-	//jalv.midi_buf_size = 1024; 
+	jalv.block_length  = 1024;    //FIXME try removing
+  jalv.midi_buf_size = 0x8000; 
 	jalv.play_state    = JALV_PAUSED; 
-  //FIXME pass bpm
-	jalv.bpm           = 120.0f; //oh probably we don't even use this bpm, right? coul dbe
+	jalv.bpm           = 120.0f; //TODO experiment with this
 
 
 	if (jalv_init(&argc, &argv, &jalv.opts)) {
@@ -615,6 +586,10 @@ main(int argc, char** argv)
   if(!jalv.opts.outfile){
     jalv.opts.outfile = (char *)malloc(256);// 
     strcpy(jalv.opts.outfile, "output.wav");
+  }
+  if(!jalv.opts.infile){
+    jalv.opts.infile = (char *)malloc(256);// 
+    strcpy(jalv.opts.infile, "test.mid");
   }
 
   if (! jalv.opts.sample_rate){
@@ -839,11 +814,8 @@ main(int argc, char** argv)
 	/* Create thread and ringbuffers for worker if necessary */
 	if (lilv_plugin_has_feature(jalv.plugin, jalv.nodes.work_schedule) // can we check if amsynth has this work_schedule feature? hmm yeah we should check via LV2-render, right? yeah
 	    && lilv_plugin_has_extension_data(jalv.plugin, jalv.nodes.work_interface)) {
-//		jalv_worker_init(
-	//		&jalv, &jalv.worker,
-		//	(const LV2_Worker_Interface*)lilv_instance_get_extension_data(
-			//	jalv.instance, LV2_WORKER__interface));
-		  printf("NEED WORKER!\n"); //extension data test too? yeah I guess not ok let's see what else
+		  printf("NEEDS TO USE A WORKER!\n"); 
+      exit(1);
 	}
 
 	ext_data.data_access = lilv_instance_get_descriptor(jalv.instance)->extension_data;
@@ -873,7 +845,6 @@ main(int argc, char** argv)
 	lilv_instance_activate(jalv.instance);
 
 
-//FIXME get sample rate from above...right? yes
 	jalv.sample_rate = jalv.opts.sample_rate; 
 	jalv.play_state  = JALV_RUNNING;
 
@@ -887,10 +858,7 @@ main(int argc, char** argv)
   process_midi_ctx.outfile = outfile;
   process_midi_ctx.sample_rate = sample_rate;
 
-  load_midi_file("short_example.mid", (read_midi_callback)process_midi_cb, &process_midi_ctx);
-//
-//STUDY LATER
-
+  load_midi_file(jalv.opts.infile, (read_midi_callback)process_midi_cb, &process_midi_ctx);
 
   sf_close(outfile);
 

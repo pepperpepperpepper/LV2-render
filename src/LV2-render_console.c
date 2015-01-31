@@ -17,9 +17,10 @@ print_usage(const char* name, bool error)
 	fprintf(os, "Usage: %s [OPTION...] PLUGIN_URI\n", name);
 	fprintf(os, "Render a midi file with an LV2 plugin instrument.\n");
 	fprintf(os, "  -h           Display this help and exit\n");
+	fprintf(os, "  -i STRING    filename for midi input (DEFAULT=test.mid)\n");
+	fprintf(os, "  -o STRING    filename for wavfile output (DEFAULT=output.wav)\n");
 	fprintf(os, "  -p           Print control output changes to stdout\n");
 	fprintf(os, "  -c SYM=VAL   Set control value (e.g. \"vol=1.4\")\n");
-	fprintf(os, "  -F STRING    filename for wavfile output (DEFAULT=output.wav)\n");
 	fprintf(os, "  -C NUM       Integer number of channels for output, e.g. 2 (DEFAULT=2)\n");
 	fprintf(os, "  -S NUM       Integer sample rate of output, e.g. 44100 (DEFAULT=48000)\n");
 	fprintf(os, "  -l DIR       Load state from save directory\n");
@@ -76,12 +77,18 @@ jalv_init(int* argc, char*** argv, JalvOptions* opts)
 				return 1;
 			}
 			opts->sample_rate = atoi((*argv)[a]);
-		} else if ((*argv)[a][1] == 'F') {
+		} else if ((*argv)[a][1] == 'i') {
 			if (++a == *argc) {
-				fprintf(stderr, "Missing argument for -F\n");
+				fprintf(stderr, "Missing argument for -i\n");
 				return 1;
 			}
-			opts->outfile = (*argv)[a]; //is this wrong? not really
+			opts->infile = (*argv)[a]; 
+		} else if ((*argv)[a][1] == 'o') {
+			if (++a == *argc) {
+				fprintf(stderr, "Missing argument for -o\n");
+				return 1;
+			}
+			opts->outfile = (*argv)[a]; 
 		} else if ((*argv)[a][1] == 'd') {
 			opts->dump = true;
 		} else {

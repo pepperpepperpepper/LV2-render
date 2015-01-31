@@ -178,7 +178,7 @@ int get_events(void *data, fluid_midi_event_t *event){
   snd_seq_event_t seq_event; 
 
   size_t last_nframe = event_table->last_nframe;
-  event_table->last_nframe = (player->deltatime * track->ticks) * 44100 / 1000; // FIXME 44100 to ctx->samplerate
+  event_table->last_nframe = (player->deltatime * track->ticks) * 44100 / 1000; 
   event_table->nframes_since_last = event_table->last_nframe - last_nframe;
 
   convert_event_format(event, &seq_event);

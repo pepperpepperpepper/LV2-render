@@ -83,6 +83,7 @@ typedef struct {
 	int      nchannels;    ///
 	int      sample_rate;    ///
 	char*    outfile;    //
+	char*    infile;    //
 } JalvOptions;
 
 typedef struct {

@@ -227,6 +227,7 @@ int process_midi_cb(fluid_midi_event_t *event, size_t msecs, process_midi_ctx_t 
       fprintf(stderr, "ERROR: Incompatible number of channels and output ports.\n");
       fprintf(stderr, "Audio Output Ports: %d\n", pluginAudioOutputCount);
       fprintf(stderr, "Channels: %d\n", nchannels);
+      remove(jalv->temp_dir);
       exit(1);
     }
     
@@ -599,10 +600,12 @@ main(int argc, char** argv)
   //make sure input and output exist
   if(access(jalv.opts.infile, FILE_OK)){
     fprintf(stderr, "ERROR:Could not find %s\n Please specify an input file with -i\n", jalv.opts.infile);
+    remove(jalv.temp_dir);
     exit(1);
   }
   if(!access(jalv.opts.outfile, WRITE_OK)){
     fprintf(stderr, "ERROR:Could not write to %s\n.", jalv.opts.outfile);
+    remove(jalv.temp_dir);
     exit(1);
   }
 
@@ -655,12 +658,13 @@ main(int argc, char** argv)
 	jalv.urids.ui_updateRate        = symap_map(jalv.symap, LV2_UI__updateRate);
 
 
+//TODO
 
 #ifdef _WIN32
-	jalv.temp_dir = jalv_strdup("jalvXXXXXX");
+	jalv.temp_dir = jalv_strdup("LV2renderXXXXXX");
 	_mktemp(jalv.temp_dir);
 #else
-	char* templ = jalv_strdup("/tmp/jalv-XXXXXX");
+	char* templ = jalv_strdup("/tmp/LV2-render-XXXXXX");
 	jalv.temp_dir = jalv_strjoin(mkdtemp(templ), "/");
 	free(templ);
 #endif
@@ -831,6 +835,7 @@ main(int argc, char** argv)
 	if (lilv_plugin_has_feature(jalv.plugin, jalv.nodes.work_schedule) // can we check if amsynth has this work_schedule feature? hmm yeah we should check via LV2-render, right? yeah
 	    && lilv_plugin_has_extension_data(jalv.plugin, jalv.nodes.work_interface)) {
 		  printf("NEEDS TO USE A WORKER!\n"); 
+      remove(jalv.temp_dir);
       exit(1);
 	}
 

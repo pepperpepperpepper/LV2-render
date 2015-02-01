@@ -1,4 +1,4 @@
-# project LV2-render (1.4.6) configured on Sat Jan 31 00:14:07 2015 by
+# project LV2-render (1.4.6) configured on Sat Jan 31 18:08:48 2015 by
 # waf 1.7.16 (abi 98, python 20708f0 on linux2)
 # using ./waf configure
 #
@@ -10,18 +10,18 @@ Setting out to
 /home/pepper/LV2-render/build
 ----------------------------------------------------
 Checking for 'gcc' (c compiler)
-find program=['gcc', 'cc'] paths=['/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/sbin', '/usr/sbin', '/sbin', '/usr/firstscripts', '/root/.gem/ruby/2.1.0/bin', '/opt/android-sdk/build-tools/19.0.2/', '/opt/android-sdk/platform-tools', '/opt/android-sdk/tools', '/opt/devkitpro/devkitPPC/bin', '/opt/marytts/bin', '/usr/bin/site_perl', '/usr/bin/vendor_perl', '/usr/bin/core_perl', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/'] var='CC' -> '/usr/bin/gcc'
-find program=['ar'] paths=['/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/sbin', '/usr/sbin', '/sbin', '/usr/firstscripts', '/root/.gem/ruby/2.1.0/bin', '/opt/android-sdk/build-tools/19.0.2/', '/opt/android-sdk/platform-tools', '/opt/android-sdk/tools', '/opt/devkitpro/devkitPPC/bin', '/opt/marytts/bin', '/usr/bin/site_perl', '/usr/bin/vendor_perl', '/usr/bin/core_perl', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/'] var='AR' -> '/usr/bin/ar'
+find program=['gcc', 'cc'] paths=['/usr/local/lib/eclipse', '/usr/local/lib/sbt/bin', '/usr/firstscripts', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/games', '/usr/games', '/usr/firstscripts', '/usr/firstscripts;'] var='CC' -> '/usr/bin/gcc'
+find program=['ar'] paths=['/usr/local/lib/eclipse', '/usr/local/lib/sbt/bin', '/usr/firstscripts', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/games', '/usr/games', '/usr/firstscripts', '/usr/firstscripts;'] var='AR' -> '/usr/bin/ar'
 /usr/bin/gcc
 ----------------------------------------------------
 Checking for 'g++' (c++ compiler)
-find program=['g++', 'c++'] paths=['/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/sbin', '/usr/sbin', '/sbin', '/usr/firstscripts', '/root/.gem/ruby/2.1.0/bin', '/opt/android-sdk/build-tools/19.0.2/', '/opt/android-sdk/platform-tools', '/opt/android-sdk/tools', '/opt/devkitpro/devkitPPC/bin', '/opt/marytts/bin', '/usr/bin/site_perl', '/usr/bin/vendor_perl', '/usr/bin/core_perl', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/'] var='CXX' -> '/usr/bin/g++'
+find program=['g++', 'c++'] paths=['/usr/local/lib/eclipse', '/usr/local/lib/sbt/bin', '/usr/firstscripts', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/games', '/usr/games', '/usr/firstscripts', '/usr/firstscripts;'] var='CXX' -> '/usr/bin/g++'
 (tool ar is already loaded, skipping)
 /usr/bin/g++
 ----------------------------------------------------
 Checking for program pkg-config
 /usr/bin/pkg-config
-find program=['pkg-config'] paths=['/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/home/pepper/.gem/ruby/2.1.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/sbin', '/usr/sbin', '/sbin', '/usr/firstscripts', '/root/.gem/ruby/2.1.0/bin', '/opt/android-sdk/build-tools/19.0.2/', '/opt/android-sdk/platform-tools', '/opt/android-sdk/tools', '/opt/devkitpro/devkitPPC/bin', '/opt/marytts/bin', '/usr/bin/site_perl', '/usr/bin/vendor_perl', '/usr/bin/core_perl', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/', '/opt/android-sdk/tools/', '/opt/android-sdk/platform-tools/'] var='PKGCONFIG' -> '/usr/bin/pkg-config'
+find program=['pkg-config'] paths=['/usr/local/lib/eclipse', '/usr/local/lib/sbt/bin', '/usr/firstscripts', '/usr/local/bin', '/usr/bin', '/bin', '/usr/local/games', '/usr/games', '/usr/firstscripts', '/usr/firstscripts;'] var='PKGCONFIG' -> '/usr/bin/pkg-config'
 ----------------------------------------------------
 Checking for 'lv2' >= 1.8.1
 ['/usr/bin/pkg-config', '--atleast-version=1.8.1', 'lv2']
@@ -33,7 +33,7 @@ yes
 Checking for 'lilv-0' >= 0.19.2
 ['/usr/bin/pkg-config', '--atleast-version=0.19.2', 'lilv-0']
 ['/usr/bin/pkg-config', '--cflags', '--libs', 'lilv-0']
-out: -I/usr/include/lilv-0 -I/usr/include/sratom-0 -I/usr/include/sord-0 -I/usr/include/serd-0 -llilv-0 -ldl -lsratom-0 -lsord-0 -lserd-0 
+out: -I/usr/include/sratom-0 -I/usr/include/sord-0 -I/usr/include/serd-0 -I/usr/include/lilv-0 -llilv-0 -ldl -lsratom-0 -lsord-0 -lserd-0 
 
 yes
 ----------------------------------------------------

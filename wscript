@@ -19,9 +19,6 @@ def options(opt):
     opt.load('compiler_c')
     opt.load('compiler_cxx')
     autowaf.set_options(opt)
-    opt.add_option('--no-jack-session', action='store_true', default=False,
-                   dest='no_jack_session',
-                   help="Do not build JACK session support")
     opt.add_option('--no-qt', action='store_true', default=False,
                    dest='no_qt',
                    help="Do not build Qt GUI")
@@ -48,19 +45,14 @@ def configure(conf):
     autowaf.check_pkg(conf, 'sratom-0', uselib_store='SRATOM',
                       atleast_version='0.4.0', mandatory=True)
 
-    if not Options.options.no_jack_session:
-        autowaf.define(conf, 'JALV_JACK_SESSION', 1)
-
     autowaf.define(conf, 'JALV_VERSION', JALV_VERSION)
 
     conf.write_config_header('jalv_config.h', remove=False)
 
-    autowaf.display_msg(conf, "Jack metadata support",
-                        conf.is_defined('HAVE_JACK_METADATA'))
     print('')
 
 def build(bld):
-    libs = 'LILV SUIL JACK SERD SORD SRATOM LV2' 
+    libs = 'LILV SUIL SERD SORD SRATOM LV2' 
 
     source = 'src/LV2-render.c src/symap.c src/state.c src/lv2_evbuf.c src/worker.c src/log.c' 
     source += ' src/midi/midi_loader.c src/midi/fluid_midi.c src/midi/fluid_list.c'
